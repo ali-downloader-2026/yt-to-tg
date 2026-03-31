@@ -4,19 +4,19 @@ import nest_asyncio
 from pyrogram import Client
 from yt_dlp import YoutubeDL
 
-# یہ لائن کلاؤڈ پر ضروری ہے
+# Cloud compatibility
 nest_asyncio.apply()
 
-# --- فائل کے نام (جو آپ GitHub پر اپلوڈ کریں گے) ---
+# --- Files ---
 input_file = "specific_channels_database.txt"
 log_file = "uploaded_history.txt"
 error_file = "failed_links.txt"
 
-# --- آپ کی بوٹ تفصیلات ---
+# --- Credentials ---
 api_id = 2040
 api_hash = "b18441a1ff607e10a989891a5462e627"
 bot_token = "8452483914:AAF6ey1lmT6QrZf1Texv2iFDwJFqg2JTX9k"
-chat_id = "rhkdjd52"  # اگر یہ یوزر نیم ہے تو شروع میں @ لگائیں جیسے "@rhkdjd52"
+chat_id = "rhkdjd52" 
 
 async def get_info(link):
     try:
@@ -35,12 +35,12 @@ async def get_info(link):
 async def start_transfer():
     app = Client("koyeb_session", api_id=api_id, api_hash=api_hash, bot_token=bot_token)
     async with app:
-        print("✅ Cloud Bot Start Ho Gaya Hai...")
+        print("✅ Fast Mode Start!")
         
-        while True:  # 24 گھنٹے چلانے کے لیے لوپ
+        while True:
             if not os.path.exists(input_file):
-                print(f"Waiting for {input_file}...")
-                await asyncio.sleep(60)
+                print("Waiting for file...")
+                await asyncio.sleep(10)
                 continue
 
             with open(input_file, "r") as f:
@@ -54,48 +54,44 @@ async def start_transfer():
             pending = [l for l in all_links if l not in uploaded_urls]
             
             if not pending:
-                print("😴 Sab links khatam! Naye links ka intezar...")
-                await asyncio.sleep(300) # 5 minut break
+                print("Done! Waiting 1 minute for new links...")
+                await asyncio.sleep(60)
                 continue
-
-            print(f"🚀 Total {len(pending)} naye links par kaam ho raha hai...")
 
             for link in pending:
                 item = await get_info(link)
                 if not item: continue
                 
                 try:
+                    # Fast download
                     ydl_opts = {'format': 'best', 'outtmpl': 'video.mp4', 'quiet': True}
                     with YoutubeDL(ydl_opts) as ydl:
                         ydl.download([item['link']])
                     
                     video_caption = f"📝 **{item['title']}**"
-                    detail_text = (f"🔗 **Video URL:** {item['link']}\n"
-                                 f"📺 **Channel Name:** {item['channel']}\n"
-                                 f"👤 **Channel Username:** @{item['username']}\n"
-                                 f"🏠 **Channel URL:** {item['channel_url']}")
+                    detail_text = (f"🔗 **URL:** {item['link']}\n"
+                                 f"📺 **Channel:** {item['channel']}")
 
-                    # Upload as Document
+                    # Sending Document
                     await app.send_document(chat_id=chat_id, document="video.mp4", caption=video_caption)
-                    # Details message
                     await app.send_message(chat_id=chat_id, text=detail_text)
 
                     with open(log_file, "a") as log: 
                         log.write(item['link'] + "\n")
                     
                     if os.path.exists("video.mp4"): os.remove("video.mp4")
-                    print(f"✅ Successful: {item['title']}")
+                    print(f"✅ Sent: {item['title']}")
                     
-                    # اکاؤنٹ بچانے کے لیے 30 سیکنڈ کا وقفہ
-                    await asyncio.sleep(30)
+                    # Minimum delay to avoid ban (5 seconds)
+                    await asyncio.sleep(5)
                 
                 except Exception as e:
                     print(f"❌ Error: {e}")
                     with open(error_file, "a") as err: 
                         err.write(link + "\n")
-                    await asyncio.sleep(10)
+                    await asyncio.sleep(2)
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(start_transfer())
-    
+                    
